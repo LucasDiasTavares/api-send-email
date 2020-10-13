@@ -18,8 +18,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'send_email',
     'django_celery_beat',
+    'django_celery_results',
+    'send_email',
 ]
 
 MIDDLEWARE = [
@@ -94,16 +95,17 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BEAT_SCHEDULE = {
     "schedule_task": {
         "task": "send_email_task",
-        "schedule": 1.0,
+        "schedule": 0.5,
         "args": {
             "Tavarinho@Tavarinho.com",
             "Tavarinho@Tavarinho.com",
             "Conteudo",
             "Nome",
-            None,
+            None
         }
     }
 }

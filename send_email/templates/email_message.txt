@@ -1,5 +1,1 @@
-Hello <strong>{{name|safe}}</strong>
-
-{{review|safe}}
-
-Thank you!
+{{content|safe}}

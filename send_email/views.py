@@ -3,16 +3,15 @@ import tempfile
 from rest_framework import generics, status
 from rest_framework.response import Response
 
-from send_email.serializers import SendEmailSerializer
-from send_email.tasks import send_email_task
+from .serializers import SendEmailSerializer
+from .tasks import send_email_task
 
 
 class SendEmailAPIView(generics.GenericAPIView):
     serializer_class = SendEmailSerializer
 
     def post(self, request):
-
-        name = request.data['name']
+        subject = request.data['subject']
         content = request.data['content']
         email_from = request.data['emailFrom']
         email_to = request.data['emailTo']
@@ -30,9 +29,9 @@ class SendEmailAPIView(generics.GenericAPIView):
                 raise Response({'error': "Problem with the input file %s" % file_name},
                                status=status.HTTP_404_NOT_FOUND)
             finally:
-                send_email_task.delay(name, email_from, email_to, content, tempfn, file_name, file_type)
+                send_email_task.delay(subject, email_from, email_to, content, tempfn, file_name, file_type)
 
         else:
-            send_email_task.delay(name, email_from, email_to, content)
+            send_email_task.delay(subject, email_from, email_to, content)
 
         return Response({'message': 'Email successfully sended'}, status=status.HTTP_200_OK)
