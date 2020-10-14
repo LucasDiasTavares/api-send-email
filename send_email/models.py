@@ -11,4 +11,7 @@ class Email(models.Model):
     file = models.FileField(null=True, blank=True)
 
     def __str__(self):
-        return self.content
+        return self.subject
+
+    class Meta:
+        ordering = ("created_at", )
