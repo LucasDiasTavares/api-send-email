@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from decouple import config
 
@@ -39,7 +40,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates'],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,6 +84,9 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+VENV_PATH = os.path.dirname(BASE_DIR)
+MEDIA_ROOT = os.path.join(VENV_PATH, 'media_root')
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -96,16 +100,11 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_BEAT_SCHEDULE = {
-    "schedule_task": {
-        "task": "send_email_task",
-        "schedule": 0.5,
-        "args": {
-            "Tavarinho@Tavarinho.com",
-            "Tavarinho@Tavarinho.com",
-            "Conteudo",
-            "Nome",
-            None
-        }
-    }
-}
+
+MAX_UPLOAD_SIZE = 5242880
+CONTENT_TYPES = ['text/plain', 'application/pdf',
+                 'application/octet-stream', 'image/jpeg', 'text/csv',
+                 'text/css', 'text/csv', 'application/msword', 'text/html',
+                 'application/json', 'image/png', 'application/vnd.ms-powerpoint',
+                 'image/svg+xml', 'application/xhtml+xml', 'application/vnd.ms-excel',
+                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
