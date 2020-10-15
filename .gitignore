@@ -5,3 +5,5 @@
 media
 .env
 .idea
+/media_root
+*media_root

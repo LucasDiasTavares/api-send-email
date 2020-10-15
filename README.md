@@ -1,9 +1,11 @@
 # Command Reference
 
+# Install with Docker
+`docker-compose up --build`
+
 # Create virtual environment
     `python3 -m venv nomeDoAmbiente`
     `. nomeDoAmbiente/bin/activate`
-    Para desativar so digitar `deactivate` no terminal
 
 # Install requirements
     `pip install -r requirements.txt`
