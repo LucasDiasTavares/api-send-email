@@ -1,4 +1,7 @@
+from datetime import timedelta
 from django.db import models
+from django.utils import timezone
+from django_fsm import FSMField, transition
 
 
 class Email(models.Model):
@@ -9,9 +12,18 @@ class Email(models.Model):
     emailFrom = models.EmailField(max_length=256)
     emailTo = models.EmailField(max_length=256)
     file = models.FileField(null=True, blank=True)
+    status = FSMField(default="old")
+
+    def was_sended_recently(self):
+        now = timezone.now()
+        return now - timedelta(days=1) <= self.created_at <= now
+
+    class Meta:
+        ordering = ("created_at", )
 
     def __str__(self):
         return self.subject
 
-    class Meta:
-        ordering = ("created_at", )
+    @transition(field=status, source='old', target='new')
+    def new(self):
+        pass

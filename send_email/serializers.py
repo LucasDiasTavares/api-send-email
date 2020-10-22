@@ -12,7 +12,7 @@ class SendEmailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Email
-        fields = '__all__'
+        exclude = ('updated_at', )
 
     def validate(self, attrs):
         file = attrs.get('file', '')

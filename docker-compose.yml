@@ -7,7 +7,7 @@ services:
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .C:/Projects/api-send-email
-      # - /c/Projects/api-send-email/tmp:/tmp
+      - /c/Projects/api-send-email/tmp:/tmp
     ports:
       - "8000:8000"
     environment:
@@ -20,10 +20,10 @@ services:
       - redis
   celery:
     build: .
-    command: celery worker --app=core --loglevel=info
+    command: celery -A core worker --loglevel=INFO --concurrency=20 -n worker1@%h
     volumes:
       - .C:/Projects/api-send-email
-      # - /c/Projects/api-send-email/tmp:/tmp
+      - /c/Projects/api-send-email/tmp:/tmp
     depends_on:
       - django
       - redis

@@ -95,10 +95,9 @@ admin.site.register(TaskResult, TaskResultAdmin)
 
 @admin.register(Email)
 class EmailAdmin(admin.ModelAdmin, ExportCsvMixin):
-    list_display = ("emailFrom", "emailTo", "subject", "created_at")
+    list_display = ("emailFrom", "emailTo", "subject", "created_at", "was_sended_recently")
     readonly_fields = ('emailFrom', 'emailTo', 'subject', 'created_at', 'content', 'file')
     list_filter = (('emailFrom', custom_titled_filter('Email Sender')),
                    ('created_at', custom_titled_filter('Date')))
-    search_fields = ("emailFrom__icontains", "subject__icontains")
+    search_fields = ("emailFrom__icontains", "subject__icontains", "emailTo__icontains")
     actions = ["export_as_csv"]
-
