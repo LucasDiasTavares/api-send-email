@@ -4,7 +4,8 @@ services:
   django:
     build: .
     container_name: django
-    command: python manage.py runserver 0.0.0.0:8000
+    # command: python manage.py runserver 0.0.0.0:8000
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .C:/Projects/api-send-email
       - /c/Projects/api-send-email/tmp:/tmp
@@ -37,6 +38,7 @@ services:
     volumes:
     - pgdata:/var/lib/postgresql/data/
   redis:
+    # image: "redis:alpine"
     image: "redis:alpine"
 volumes:
   pgdata:

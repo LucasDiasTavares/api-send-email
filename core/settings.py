@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True #config('DEBUG', default=False, cast=bool)
+DEBUG = False #config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
 
@@ -105,7 +105,7 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
-# CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")# comment this line if in dev
+# CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")# comment this line if in dev without docker
 
 MAX_UPLOAD_SIZE = 5242880
 CONTENT_TYPES = ['text/plain', 'application/pdf',

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
-from celery import current_task
-from celery.decorators import task
+from celery.task import task
+from celery import Task
+from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from email.mime.image import MIMEImage
 from django.template.loader import render_to_string
@@ -10,7 +11,19 @@ from django.core.mail import EmailMultiAlternatives, get_connection
 logger = get_task_logger(__name__)
 
 
-@task(name="send_email_task")
+class CallbackTask(Task):
+    def on_success(self, retval, task_id, args, kwargs):
+        res = AsyncResult(task_id)
+        return logger.info({'id': res.id}, {'state': res.state}, {'from': list(args)[1]},
+                           {'to': list(args)[2]})
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        res = AsyncResult(task_id)
+        return logger.info({'id': res.id}, {'state': res.state}, {'from': list(args)[1]},
+                           {'to': list(args)[2]})
+
+
+@task(name="send_email_task", base=CallbackTask)
 def send_email_task(subject, email_from, email_to, content,
                     EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                     file=None, file_name=None, file_type=None):
@@ -46,6 +59,3 @@ def send_email_task(subject, email_from, email_to, content,
         email.attach_alternative(html_content, "text/html")
 
         email.send(fail_silently=False)
-
-        return logger.info(f'=> email sended {email_from} - {email_to} <=')
-        # return logger.info(current_task)

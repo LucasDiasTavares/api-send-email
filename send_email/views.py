@@ -53,17 +53,25 @@ class SendEmailAPIView(GenericAPIView):
                     raise Response({'error': "Problem with the input file %s" % file_name},
                                    status=status.HTTP_404_NOT_FOUND)
                 finally:
-                    send_email_task.delay(subject, email_from, email_to, content,
+                    t = send_email_task.delay(subject, email_from, email_to, content,
                                           EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                                           tempfn, file_name, file_type)
+                    return Response(
+                        {'taskId': t.id, 'from': email_from, 'to': email_to,
+                         'status': t.state}, status=status.HTTP_200_OK)
+
             else:
-                send_email_task.delay(
+                t = send_email_task.delay(
                     subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
 
-            return Response({'message': f'Email on queue {email_from} - {email_to}'}, status=status.HTTP_200_OK)
+            return Response(
+                {'taskId': t.id, 'from': email_from, 'to': email_to,
+                 'status': t.state}, status=status.HTTP_200_OK)
 
         else:
-            return Response({'error': f'Email unauthorized {email_from}'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'taskId': None, 'from': email_from, 'to': email_to,
+                 'message': 'Email from unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 # UpdateAPIView
