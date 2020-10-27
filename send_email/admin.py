@@ -1,7 +1,7 @@
 import csv
 from django.http import HttpResponse
 from django.contrib import admin
-from .models import Email
+from .models import Email, Provider
 from django_celery_results.models import TaskResult
 
 from django.conf import settings
@@ -101,3 +101,6 @@ class EmailAdmin(admin.ModelAdmin, ExportCsvMixin):
                    ('created_at', custom_titled_filter('Date')))
     search_fields = ("emailFrom__icontains", "subject__icontains", "emailTo__icontains")
     actions = ["export_as_csv"]
+
+
+admin.site.register(Provider)

@@ -12,7 +12,7 @@ class Email(models.Model):
     emailFrom = models.EmailField(max_length=256)
     emailTo = models.EmailField(max_length=256)
     file = models.FileField(null=True, blank=True)
-    status = FSMField(default="old")
+    # status = FSMField(default="old")
 
     def was_sended_recently(self):
         now = timezone.now()
@@ -24,6 +24,16 @@ class Email(models.Model):
     def __str__(self):
         return self.subject
 
-    @transition(field=status, source='old', target='new')
-    def new(self):
-        pass
+    # @transition(field=status, source='old', target='new')
+    # def new(self):
+    #     pass
+
+
+class Provider(models.Model):
+    EMAIL_HOST = models.CharField(max_length=256)
+    EMAIL_PORT = models.PositiveSmallIntegerField()
+    EMAIL_HOST_USER = models.CharField(max_length=256)
+    EMAIL_HOST_PASSWORD = models.CharField(max_length=256)
+
+    def __str__(self):
+        return self.EMAIL_HOST_USER
