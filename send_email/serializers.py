@@ -29,3 +29,9 @@ class SendEmailSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Email.objects.create(**validated_data)
+
+
+class SendEmailSerializerClick(serializers.ModelSerializer):
+    class Meta:
+        model = Email
+        fields = '__all__'

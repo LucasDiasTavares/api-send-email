@@ -1,11 +1,19 @@
 import os
 import tempfile
-from rest_framework import status
+
+from rest_framework import status, viewsets
+from django_fsm import TransitionNotAllowed
+from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_or_404
-from .serializers import SendEmailSerializer
+from .serializers import SendEmailSerializer, SendEmailSerializerClick
 from .tasks import send_email_task
 from .models import Email, Provider
+
+# Pixel
+import base64
+from django.http.response import HttpResponse
 
 
 # Methods
@@ -64,7 +72,7 @@ class SendEmailAPIView(GenericAPIView):
                 t = send_email_task.delay(
                     subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
                 # populate my model Email.task_id with the current task id
-                serializer.data['task_id'] = t.id
+                serializer.validated_data['task_id'] = t.id
                 serializer.save()
                 return Response(
                     {'taskId': t.id, 'from': email_from, 'to': email_to,
@@ -84,3 +92,33 @@ class SendEmailDetailAPIView(RetrieveAPIView):
     def get_object(self):
         queryset = self.get_queryset()
         return get_object_or_404(queryset, task_id=self.kwargs["task_id"])
+
+
+# Testing
+class SendEmailCheckClickAPIView(viewsets.ReadOnlyModelViewSet):
+    queryset = Email.objects.all()
+    serializer_class = SendEmailSerializerClick
+    lookup_field = 'task_id'
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        return get_object_or_404(queryset, task_id=self.kwargs["task_id"])
+
+    @action(detail=True)
+    def user_click(self, request, task_id=None):
+        email = get_object_or_404(Email, task_id=task_id)
+        try:
+            email.user_clicked_in_the_link()
+            email.save()
+        except TransitionNotAllowed as e:
+            raise ValidationError(e)
+        # return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
+        return Response({'status': email.user_clicked})
+
+
+PIXEL_GIF_DATA = base64.b64decode(
+    b"R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+
+
+def pixel_gif(request):
+    return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')

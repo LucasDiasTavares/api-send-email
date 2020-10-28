@@ -12,8 +12,12 @@ class Email(models.Model):
     emailFrom = models.EmailField(max_length=256)
     emailTo = models.EmailField(max_length=256)
     file = models.FileField(null=True, blank=True)
-    status = FSMField(default="old", null=True, blank=True)
+    user_clicked = FSMField(default='False')
     task_id = models.CharField(max_length=256, null=True, blank=True)
+
+    @transition(field=user_clicked, source='False', target='True')
+    def user_clicked_in_the_link(self):
+        pass
 
     def was_sended_recently(self):
         now = timezone.now()
@@ -24,10 +28,6 @@ class Email(models.Model):
 
     def __str__(self):
         return self.subject
-
-    @transition(field=status, source='old', target='new')
-    def new(self):
-        pass
 
 
 class Provider(models.Model):
