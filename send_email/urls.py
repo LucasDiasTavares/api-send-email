@@ -4,6 +4,6 @@ from send_email.views import SendEmailAPIView, SendEmailDetailAPIView
 urlpatterns = [
     path("",
          SendEmailAPIView.as_view(), name="tasks"),
-    path("<int:pk>/",
+    path("<uuid:task_id>/",
          SendEmailDetailAPIView.as_view(), name="task-detail"),
 ]

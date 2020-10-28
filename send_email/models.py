@@ -12,21 +12,22 @@ class Email(models.Model):
     emailFrom = models.EmailField(max_length=256)
     emailTo = models.EmailField(max_length=256)
     file = models.FileField(null=True, blank=True)
-    # status = FSMField(default="old")
+    status = FSMField(default="old", null=True, blank=True)
+    task_id = models.CharField(max_length=256, null=True, blank=True)
 
     def was_sended_recently(self):
         now = timezone.now()
         return now - timedelta(days=1) <= self.created_at <= now
 
     class Meta:
-        ordering = ("created_at", )
+        ordering = ("-created_at", )
 
     def __str__(self):
         return self.subject
 
-    # @transition(field=status, source='old', target='new')
-    # def new(self):
-    #     pass
+    @transition(field=status, source='old', target='new')
+    def new(self):
+        pass
 
 
 class Provider(models.Model):

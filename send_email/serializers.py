@@ -9,6 +9,7 @@ class SendEmailSerializer(serializers.ModelSerializer):
     content = serializers.CharField(max_length=65535)
     emailFrom = serializers.EmailField(max_length=256)
     emailTo = serializers.EmailField(max_length=256)
+    task_id = serializers.CharField(allow_blank=True, allow_null=True)
 
     class Meta:
         model = Email

@@ -1,12 +1,8 @@
 import os
 import tempfile
-
-from django_fsm import TransitionNotAllowed
 from rest_framework import status
-from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.generics import GenericAPIView, RetrieveUpdateAPIView, get_object_or_404
+from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_or_404
 from .serializers import SendEmailSerializer
 from .tasks import send_email_task
 from .models import Email, Provider
@@ -45,6 +41,7 @@ class SendEmailAPIView(GenericAPIView):
                 file_name = attachment.name
                 file_type = attachment.content_type
 
+                # django write/read InMemoryUploadedFile
                 tempf, tempfn = tempfile.mkstemp()
                 try:
                     for chunk in attachment.chunks():
@@ -56,6 +53,9 @@ class SendEmailAPIView(GenericAPIView):
                     t = send_email_task.delay(subject, email_from, email_to, content,
                                           EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                                           tempfn, file_name, file_type)
+                    # populate my model Email.task_id with the current task id
+                    serializer.validated_data['task_id'] = t.id
+                    serializer.save()
                     return Response(
                         {'taskId': t.id, 'from': email_from, 'to': email_to,
                          'status': t.state}, status=status.HTTP_200_OK)
@@ -63,10 +63,12 @@ class SendEmailAPIView(GenericAPIView):
             else:
                 t = send_email_task.delay(
                     subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
-
-            return Response(
-                {'taskId': t.id, 'from': email_from, 'to': email_to,
-                 'status': t.state}, status=status.HTTP_200_OK)
+                # populate my model Email.task_id with the current task id
+                serializer.data['task_id'] = t.id
+                serializer.save()
+                return Response(
+                    {'taskId': t.id, 'from': email_from, 'to': email_to,
+                     'status': t.state}, status=status.HTTP_200_OK)
 
         else:
             return Response(
@@ -74,17 +76,11 @@ class SendEmailAPIView(GenericAPIView):
                  'message': 'Email from unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-# UpdateAPIView
-class SendEmailDetailAPIView(RetrieveUpdateAPIView):
+class SendEmailDetailAPIView(RetrieveAPIView):
     serializer_class = SendEmailSerializer
     queryset = Email.objects.all()
+    lookup_field = 'task_id'
 
-    @action(detail=True)
-    def new(self, request, pk=None):
-        email = get_object_or_404
-        try:
-            email.new()
-            email.save()
-        except TransitionNotAllowed as e:
-            raise ValidationError(e)
-        return Response({'status': 'works'})
+    def get_object(self):
+        queryset = self.get_queryset()
+        return get_object_or_404(queryset, task_id=self.kwargs["task_id"])
