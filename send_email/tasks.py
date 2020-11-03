@@ -6,6 +6,7 @@ from celery.utils.log import get_task_logger
 from email.mime.image import MIMEImage
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives, get_connection
+import requests
 
 
 logger = get_task_logger(__name__)
@@ -14,13 +15,13 @@ logger = get_task_logger(__name__)
 class CallbackTask(Task):
     def on_success(self, retval, task_id, args, kwargs):
         res = AsyncResult(task_id)
-        # return logger.info({'id': res.id}, {'state': res.state}, {'from': list(args)[1]},
-        #                    {'to': list(args)[2]})
+        # return requests.post('https://anotherapi.com',
+        #                      data={'id': res.id, 'state': res.state, 'from': list(args)[1], 'to': list(args)[2]})
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         res = AsyncResult(task_id)
-        # return logger.info({'id': res.id}, {'state': res.state}, {'from': list(args)[1]},
-        #                    {'to': list(args)[2]})
+        # return requests.post('https://anotherapi.com',
+        #                      data={'id': res.id, 'state': res.state, 'from': list(args)[1], 'to': list(args)[2]})
 
 
 @task(name="send_email_task", base=CallbackTask)
@@ -28,12 +29,13 @@ def send_email_task(subject, email_from, email_to, content,
                     EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                     file=None, file_name=None, file_type=None):
 
-    # task_link = f'http://localhost:8000/sendemail/click/{current_task.request.id}/user_click/?format=json'
-    task_link = 'http://localhost:8000/sendemail/lucas/'
+    task_link = f'http://localhost:8000/sendemail/pixel/{current_task.request.id}/user_click/'
+    task_id = current_task.request.id
 
     context = {
         'content': content,
         'task_link': task_link,
+        'task_id': task_id
     }
 
     html_content = render_to_string('email_message.html', context)

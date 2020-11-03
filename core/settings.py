@@ -1,3 +1,4 @@
+import django_heroku
 import os
 from pathlib import Path
 from decouple import config
@@ -114,3 +115,5 @@ CONTENT_TYPES = ['text/plain', 'application/pdf',
                  'application/json', 'image/png', 'application/vnd.ms-powerpoint',
                  'image/svg+xml', 'application/xhtml+xml', 'application/vnd.ms-excel',
                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
+
+django_heroku.settings(locals())

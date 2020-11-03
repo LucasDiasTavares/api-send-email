@@ -14,5 +14,4 @@ urlpatterns = [
          SendEmailDetailAPIView.as_view(), name="task-detail"),
     # Pixel
     path('lucas/', pixel_gif, name='pixel'),
-
 ]

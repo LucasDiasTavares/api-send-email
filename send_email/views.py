@@ -58,25 +58,25 @@ class SendEmailAPIView(GenericAPIView):
                     raise Response({'error': "Problem with the input file %s" % file_name},
                                    status=status.HTTP_404_NOT_FOUND)
                 finally:
-                    t = send_email_task.delay(subject, email_from, email_to, content,
+                    current_task = send_email_task.delay(subject, email_from, email_to, content,
                                           EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                                           tempfn, file_name, file_type)
                     # populate my model Email.task_id with the current task id
-                    serializer.validated_data['task_id'] = t.id
+                    serializer.validated_data['task_id'] = current_task.id
                     serializer.save()
                     return Response(
-                        {'taskId': t.id, 'from': email_from, 'to': email_to,
-                         'status': t.state}, status=status.HTTP_200_OK)
+                        {'taskId': current_task.id, 'from': email_from, 'to': email_to,
+                         'status': current_task.state}, status=status.HTTP_200_OK)
 
             else:
-                t = send_email_task.delay(
+                current_task = send_email_task.delay(
                     subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
                 # populate my model Email.task_id with the current task id
-                serializer.validated_data['task_id'] = t.id
+                serializer.validated_data['task_id'] = current_task.id
                 serializer.save()
                 return Response(
-                    {'taskId': t.id, 'from': email_from, 'to': email_to,
-                     'status': t.state}, status=status.HTTP_200_OK)
+                    {'taskId': current_task.id, 'from': email_from, 'to': email_to,
+                     'status': current_task.state}, status=status.HTTP_200_OK)
 
         else:
             return Response(
@@ -94,7 +94,10 @@ class SendEmailDetailAPIView(RetrieveAPIView):
         return get_object_or_404(queryset, task_id=self.kwargs["task_id"])
 
 
-# Testing
+PIXEL_GIF_DATA = base64.b64decode(
+    b"R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+
+
 class SendEmailCheckClickAPIView(viewsets.ReadOnlyModelViewSet):
     queryset = Email.objects.all()
     serializer_class = SendEmailSerializerClick
@@ -112,13 +115,10 @@ class SendEmailCheckClickAPIView(viewsets.ReadOnlyModelViewSet):
             email.save()
         except TransitionNotAllowed as e:
             raise ValidationError(e)
-        # return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
-        return Response({'status': email.user_clicked})
-
-
-PIXEL_GIF_DATA = base64.b64decode(
-    b"R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
+        return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
+        # return Response({'status': email.user_clicked})
 
 
 def pixel_gif(request):
+    print('lucas')
     return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
