@@ -108,6 +108,8 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
 # CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")# comment this line if in dev without docker
 
+CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+
 MAX_UPLOAD_SIZE = 5242880
 CONTENT_TYPES = ['text/plain', 'application/pdf',
                  'application/octet-stream', 'image/jpeg', 'text/csv',
