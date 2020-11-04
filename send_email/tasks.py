@@ -24,12 +24,12 @@ class CallbackTask(Task):
         #                      data={'id': res.id, 'state': res.state, 'from': list(args)[1], 'to': list(args)[2]})
 
 
-@task(name="send_email_task", base=CallbackTask)
+@task(name="send_email_task", base=CallbackTask, autoretry_for=(ConnectionRefusedError,))
 def send_email_task(subject, email_from, email_to, content,
                     EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                     file=None, file_name=None, file_type=None):
 
-    task_link = f'http://localhost:8000/sendemail/pixel/{current_task.request.id}/user_click/'
+    task_link = f'http://send-email-api-django.herokuapp.com/sendemail/pixel/{current_task.request.id}/user_click/'
     task_id = current_task.request.id
 
     context = {
