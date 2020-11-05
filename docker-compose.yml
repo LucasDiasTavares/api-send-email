@@ -4,7 +4,6 @@ services:
   django:
     build: .
     container_name: django
-    # command: python manage.py runserver 0.0.0.0:8000
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .C:/Projects/api-send-email
@@ -14,14 +13,14 @@ services:
     environment:
       - DEBUG=1
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+#      - CELERY_BROKER=redis://redis:6379/0
+#      - CELERY_BACKEND=redis://redis:6379/0
     depends_on:
       - pgdb
       - redis
   celery:
     build: .
-    command: celery -A core worker --loglevel=INFO --concurrency=20 -n worker1@%h
+    command: celery -A core worker --loglevel=INFO --autoscale=999,1
     volumes:
       - .C:/Projects/api-send-email
       - /c/Projects/api-send-email/tmp:/tmp
@@ -35,10 +34,9 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-    volumes:
-    - pgdata:/var/lib/postgresql/data/
+#    volumes:
+#    - pgdata:/var/lib/postgresql/data/
   redis:
-    # image: "redis:alpine"
     image: "redis:alpine"
-volumes:
-  pgdata:
+#volumes:
+#  pgdata:
