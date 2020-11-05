@@ -1,3 +1,4 @@
+import django_heroku
 import os
 from pathlib import Path
 from decouple import config
@@ -118,3 +119,5 @@ CONTENT_TYPES = ['text/plain', 'application/pdf',
                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 
 CELERY_CREATE_MISSING_QUEUES = True
+
+django_heroku.settings(locals())
