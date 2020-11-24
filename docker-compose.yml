@@ -20,7 +20,7 @@ services:
       - redis
   celery:
     build: .
-    command: celery -A core worker --loglevel=INFO --autoscale=999,1
+    command: celery -A core worker --loglevel=INFO
     volumes:
       - .C:/Projects/api-send-email
       - /c/Projects/api-send-email/tmp:/tmp
@@ -38,5 +38,5 @@ services:
 #    - pgdata:/var/lib/postgresql/data/
   redis:
     image: "redis:alpine"
-#volumes:
+# volumes:
 #  pgdata:

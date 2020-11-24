@@ -1,4 +1,3 @@
-import django_heroku
 import os
 from pathlib import Path
 from decouple import config
@@ -7,9 +6,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 
-DEBUG = True #config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['*']
+
+URL_DOMAIN = config('URL_DOMAIN')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -108,7 +109,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
 # CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
 
-CELERY_BROKER_URL = config('CELERY_BROKER_URL')
+# CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 
 MAX_UPLOAD_SIZE = 3145728
 CONTENT_TYPES = ['text/plain', 'application/pdf',
@@ -118,6 +119,3 @@ CONTENT_TYPES = ['text/plain', 'application/pdf',
                  'image/svg+xml', 'application/xhtml+xml', 'application/vnd.ms-excel',
                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
 
-CELERY_CREATE_MISSING_QUEUES = True
-
-django_heroku.settings(locals())

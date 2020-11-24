@@ -4,9 +4,10 @@ from celery import Task, current_task
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 from email.mime.image import MIMEImage
+from django.conf import settings
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives, get_connection
-import requests
+# import requests
 import random
 
 
@@ -22,21 +23,24 @@ class CallbackTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         res = AsyncResult(task_id)
         # return requests.post('https://anotherapi.com',
-        #                      data={'id': res.id, 'state': res.state, 'from': list(args)[1], 'to': list(args)[2]})
+        #                      data={'id': res.id, 'state': res.state, 'error: exc.args',
+        #                      'from': list(args)[1], 'to': list(args)[2]})
 
 
-@task(bind=True, name="send_email_task", autoretry_for=(ConnectionRefusedError,), max_retries=10)
+@task(base=CallbackTask, bind=True, name="send_email_task",
+      autoretry_for=(ConnectionRefusedError, ConnectionError,), max_retries=5)
 def send_email_task(self, subject, email_from, email_to, content,
                     EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
                     file=None, file_name=None, file_type=None):
 
     try:
-        task_link = f'https://localhost:8000/sendemail/pixel/{current_task.request.id}/user_click/'
         task_id = current_task.request.id
+
+        task_link_user_openned_email = f'{settings.URL_DOMAIN}/sendemail/pixel/{task_id}/user_click/'
 
         context = {
             'content': content,
-            'task_link': task_link,
+            'task_link_user_openned_email': task_link_user_openned_email,
             'task_id': task_id
         }
 
@@ -68,5 +72,5 @@ def send_email_task(self, subject, email_from, email_to, content,
             email.attach_alternative(html_content, "text/html")
 
             email.send(fail_silently=False)
-    except ConnectionRefusedError as exc:
+    except (ConnectionRefusedError, ConnectionError) as exc:
         self.retry(exc=exc, countdown=int(random.uniform(2, 4) ** random.uniform(2, 3)))

@@ -1,19 +1,21 @@
 import os
 import tempfile
-
+import re
+from django.shortcuts import redirect
 from rest_framework import status, viewsets
 from django_fsm import TransitionNotAllowed
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_or_404
-from .serializers import SendEmailSerializer, SendEmailSerializerClick
+from .serializers import SendEmailSerializer, SendEmailSerializerPixel, EmailClickCreateSerializer
 from .tasks import send_email_task
-from .models import Email, Provider
+from .models import Email, Provider, EmailClick
 
 # Pixel
 import base64
 from django.http.response import HttpResponse
+from django.conf import settings
 
 
 # Methods
@@ -31,11 +33,27 @@ class SendEmailAPIView(GenericAPIView):
         email = request.data
         serializer = self.serializer_class(data=email)
         serializer.is_valid(raise_exception=True)
+        srl = serializer.save()
 
         subject = request.data['subject']
         content = request.data['content']
         email_from = request.data['emailFrom']
         email_to = request.data['emailTo']
+
+        current_email_instance = Email.objects.filter(id=srl.id)
+        for email_emailclick in current_email_instance:
+            email_emailclick_urls = email_emailclick.urls.all()
+
+            for single_url_from_email_instance in email_emailclick_urls:
+                str_link = str(single_url_from_email_instance.url_link)
+                # Regex pattern register
+                pattern = re.compile(str_link)
+                # Replace old url
+                srl.content = pattern.sub((r'%s/sendemail/click/%s/user_click/?link=%s' %
+                                           (settings.URL_DOMAIN, single_url_from_email_instance.id, str_link)
+                                           ), srl.content)
+                content = srl.content
+                srl.save()
 
         email = filter_email_exists(request.data['emailFrom'])
 
@@ -58,22 +76,25 @@ class SendEmailAPIView(GenericAPIView):
                     raise Response({'error': "Problem with the input file %s" % file_name},
                                    status=status.HTTP_404_NOT_FOUND)
                 finally:
-                    current_task = send_email_task.delay(subject, email_from, email_to, content,
-                                          EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD,
-                                          tempfn, file_name, file_type)
+                    # with file
+                    current_task = send_email_task.delay(
+                        subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD, tempfn,
+                        file_name, file_type)
                     # populate my model Email.task_id with the current task id
-                    serializer.validated_data['task_id'] = current_task.id
-                    serializer.save()
+                    srl.task_id = current_task.id
+                    srl.save()
                     return Response(
                         {'taskId': current_task.id, 'from': email_from, 'to': email_to,
                          'status': current_task.state}, status=status.HTTP_200_OK)
 
             else:
+                # without file
                 current_task = send_email_task.delay(
                     subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
                 # populate my model Email.task_id with the current task id
-                serializer.validated_data['task_id'] = current_task.id
-                serializer.save()
+                # serializer.validated_data['task_id'] = current_task.id
+                srl.task_id = current_task.id
+                srl.save()
                 return Response(
                     {'taskId': current_task.id, 'from': email_from, 'to': email_to,
                      'status': current_task.state}, status=status.HTTP_200_OK)
@@ -81,7 +102,7 @@ class SendEmailAPIView(GenericAPIView):
         else:
             return Response(
                 {'taskId': None, 'from': email_from, 'to': email_to,
-                 'message': 'Email from unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+                 'message': 'Email unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class SendEmailDetailAPIView(RetrieveAPIView):
@@ -98,9 +119,9 @@ PIXEL_GIF_DATA = base64.b64decode(
     b"R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")
 
 
-class SendEmailCheckClickAPIView(viewsets.ReadOnlyModelViewSet):
+class SendEmailCheckUserOpennedAPIView(viewsets.ReadOnlyModelViewSet):
     queryset = Email.objects.all()
-    serializer_class = SendEmailSerializerClick
+    serializer_class = SendEmailSerializerPixel
     lookup_field = 'task_id'
 
     def get_object(self):
@@ -108,17 +129,32 @@ class SendEmailCheckClickAPIView(viewsets.ReadOnlyModelViewSet):
         return get_object_or_404(queryset, task_id=self.kwargs["task_id"])
 
     @action(detail=True)
-    def user_click(self, request, task_id=None):
+    def user_openned(self, request, task_id=None):
         email = get_object_or_404(Email, task_id=task_id)
         try:
-            email.user_clicked_in_the_link()
+            email.user_viwed_email()
             email.save()
         except TransitionNotAllowed as e:
             raise ValidationError(e)
         return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
-        # return Response({'status': email.user_clicked})
 
 
-def pixel_gif(request):
-    print('lucas')
-    return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
+class EmailUserClickAPIView(viewsets.ReadOnlyModelViewSet):
+    queryset = EmailClick.objects.all()
+    serializer_class = EmailClickCreateSerializer
+    lookup_field = 'id'
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        return get_object_or_404(queryset, id=self.kwargs["id"])
+
+    @action(detail=True)
+    def user_click(self, request, id=None):
+
+        email = get_object_or_404(EmailClick, id=id)
+        try:
+            email.user_clicked_in_the_link()
+            email.save()
+        except TransitionNotAllowed:
+            return redirect(email.url_link)
+        return redirect(email.url_link)
