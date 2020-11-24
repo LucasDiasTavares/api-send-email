@@ -18,6 +18,13 @@
 SECRET_KEY=SomeRandomStringd5a4sd3242**kjdfa))h(ljfk)87632&*42%$
 DEBUG=True
 URL_DOMAIN=http://192.168.99.100:8000
+ALLOWED_HOSTS=[http://192.168.99.100:8000, ]
+ENGINE=django.db.backends.postgresql
+NAME=postgres
+USER=postgres
+PASSWORD=postgres
+HOST=pgdb
+PORT=5432
 ```
 
 # Install RabbitMQ (Ubuntu Linux 20.04LTS)

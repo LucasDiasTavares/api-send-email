@@ -20,7 +20,7 @@ services:
       - redis
   celery:
     build: .
-    command: celery -A core worker --loglevel=INFO
+    command: celery -A core worker --loglevel=INFO --autoscale 1,5
     volumes:
       - .C:/Projects/api-send-email
       - /c/Projects/api-send-email/tmp:/tmp
@@ -34,9 +34,9 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-#    volumes:
-#    - pgdata:/var/lib/postgresql/data/
+    volumes:
+    - pgdata:/var/lib/postgresql/data/
   redis:
     image: "redis:alpine"
-# volumes:
-#  pgdata:
+volumes:
+  pgdata:
