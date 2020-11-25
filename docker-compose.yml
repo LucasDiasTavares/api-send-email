@@ -11,8 +11,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=1
-      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1
+      - DEBUG=${DEBUG}
+      - DJANGO_ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - ENGINE=${ENGINE}
+      - NAME=${NAME}
+      - USER=${USER}
+      - PASSWORD=${PASSWORD}
+      - HOST=${HOST}
+      - PORT=${PORT}
 #      - CELERY_BROKER=redis://redis:6379/0
 #      - CELERY_BACKEND=redis://redis:6379/0
     depends_on:
@@ -20,7 +26,7 @@ services:
       - redis
   celery:
     build: .
-    command: celery -A core worker --loglevel=INFO --autoscale 1,5
+    command: celery -A core worker --loglevel=INFO --autoscale 5,1
     volumes:
       - .C:/Projects/api-send-email
       - /c/Projects/api-send-email/tmp:/tmp
