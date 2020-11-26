@@ -12,7 +12,7 @@ router2.register(r"", EmailUserClickAPIView)
 
 
 urlpatterns = [
-    # Img pixel at end of email, when user upen, change to TRUE
+    # Img pixel at end of email, when user open, change to TRUE
     path("pixel/", include(router.urls), name="task-detail"),
 
     # Email User Click List/Detail using id if in detail view you can active action "user click" to change

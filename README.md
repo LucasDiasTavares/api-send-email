@@ -183,3 +183,58 @@ List with all emails, check `"user_openned_email": "False"` or `"user_openned_em
     }
 ]
 ```
+
+### Webhook
+If you wanna receive statistics from your email, you need to send me a Json with webhook, like the example below.
+```json
+{
+     "subject": "Bulk Create with nested child",
+     "content": "<!DOCTYPE html>\n<html>\n<body>\n\n<h1>My First Heading</h1>\n<p>My first paragraph.</p>\n\n<div>\n    <a href='http://www.lucas.com'>lucas<a/>\n    <a href=\"https://www.lucas2.com\">lucas<a/>\n    <a href=\"https://lucas3.com\">lucas<a/>\n    <a href=\"http://lucas4.gov.com\">lucas<a/>\n    <a href='http://www.lucas.gov.xxx.xxxx.xxx.xxx.com'>lucas<a/>\n    <a href=\"https://external.asd1230-123.asd_internal.asd.gm-_ail.com\">lucas<a/>\n</div>\n\n</body>\n</html>",
+     "emailFrom": "django.test.sender@gmail.com",
+     "emailTo": "django.test.sender@gmail.com",
+     "urls": [],
+     "webhook": "https://www.tavares.com.br/statistics"
+}
+```
+
+#### Webhook with wrong url
+If you send a POST with a wrong url in webhook parameter, you'll not recieve any feedback from the API.
+<br>
+
+#### When the email is sended, you'll recieve a JSON
+```json
+{
+    "tracker_id": "b77ef27e-5490-42a8-a416-461674eeb1ce",
+    "type": "Send",
+    "email_from": "lucas.django.test.sender@gmail.com",
+    "email_to": "lucas.django.test.sender@gmail.com"
+}
+```
+
+#### When the email is fail, you'll recieve a JSON
+```json
+{
+    "tracker_id": "b77ef27e-5490-42a8-a416-461674eeb1ce",
+    "type": "Failure",
+    "email_from": "lucas.django.test.sender@gmail.com",
+    "email_to": "lucas.django.test.sender@gmail.com",
+    "error": "10061 is a Connection Refused error sent to you by the server. You could not make a connection because the target machine actively refused it"
+}
+```
+
+#### When the user open your email, you'll recieve a JSON
+```json
+{
+    "tracker_id": "39e9fb29-84e8-45cb-8ae2-659e2e069a6a",
+    "type": "Opened"
+}
+```
+
+#### When the user click in any link in your email, you'll recieve a JSON
+```json
+{
+    "tracker_id": "39e9fb29-84e8-45cb-8ae2-659e2e069a6a",
+    "link": "http://www.any.email.here.gov.com",
+    "type": "Click"
+}
+```

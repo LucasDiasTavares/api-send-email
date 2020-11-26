@@ -27,12 +27,13 @@ class SendEmailSerializer(serializers.ModelSerializer):
     content = serializers.CharField(max_length=65535)
     emailFrom = serializers.EmailField(max_length=256)
     emailTo = serializers.EmailField(max_length=256)
-    urls = EmailClickSerializer(many=True, allow_null=True)
+    urls = EmailClickSerializer(many=True, allow_null=True, required=False)
+    webhook = serializers.EmailField(allow_null=True, allow_blank=True, required=False)
 
     class Meta:
         model = Email
         fields = ('id', 'task_id', 'created_at', 'user_openned_email', 'subject',  'content', 'emailFrom', 'emailTo',
-                  'file', 'urls')
+                  'file', 'webhook', 'urls')
 
     def validate(self, attrs):
         file = attrs.get('file', '')

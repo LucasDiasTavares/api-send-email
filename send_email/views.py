@@ -11,6 +11,8 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView, get_object_
 from .serializers import SendEmailSerializer, SendEmailSerializerPixel, EmailClickCreateSerializer
 from .tasks import send_email_task
 from .models import Email, Provider, EmailClick
+from requests import post
+from requests.exceptions import RequestException
 
 # Pixel
 import base64
@@ -19,8 +21,8 @@ from django.conf import settings
 
 
 # Methods
-def filter_email_exists(email):
-    qs = Provider.objects.filter(EMAIL_HOST_USER=email)
+def filter_provider_exists(provider):
+    qs = Provider.objects.filter(EMAIL_HOST_USER=provider)
     if qs.exists():
         return qs[0]
     return None
@@ -44,23 +46,24 @@ class SendEmailAPIView(GenericAPIView):
         for email_emailclick in current_email_instance:
             email_emailclick_urls = email_emailclick.urls.all()
 
-            for single_url_from_email_instance in email_emailclick_urls:
-                str_link = str(single_url_from_email_instance.url_link)
-                # Regex pattern register
-                pattern = re.compile(str_link)
-                # Replace old url
-                srl.content = pattern.sub((r'%s/sendemail/click/%s/user_click/?link=%s' %
-                                           (settings.URL_DOMAIN, single_url_from_email_instance.id, str_link)
-                                           ), srl.content)
-                content = srl.content
-                srl.save()
+            if len(email_emailclick_urls) > 0:
+                for single_url_from_email_instance in email_emailclick_urls:
+                    str_link = str(single_url_from_email_instance.url_link)
+                    # Regex pattern register
+                    pattern = re.compile(str_link)
+                    # Replace old url
+                    srl.content = pattern.sub((r'%s/sendemail/click/%s/user_click/?link=%s' %
+                                               (settings.URL_DOMAIN, single_url_from_email_instance.id, str_link)
+                                               ), srl.content)
+                    content = srl.content
+                    srl.save()
 
-        email = filter_email_exists(request.data['emailFrom'])
+        provider = filter_provider_exists(request.data['emailFrom'])
 
-        if email:
-            EMAIL_PORT = email.EMAIL_PORT
-            EMAIL_HOST = email.EMAIL_HOST
-            EMAIL_HOST_PASSWORD = email.EMAIL_HOST_PASSWORD
+        if provider:
+            EMAIL_PORT = provider.EMAIL_PORT
+            EMAIL_HOST = provider.EMAIL_HOST
+            EMAIL_HOST_PASSWORD = provider.EMAIL_HOST_PASSWORD
 
             if request.FILES:
                 attachment = request.FILES['file']
@@ -78,21 +81,21 @@ class SendEmailAPIView(GenericAPIView):
                 finally:
                     # with file
                     current_task = send_email_task.delay(
-                        subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD, tempfn,
-                        file_name, file_type)
+                        subject, email_from, email_to, content, srl.webhook, EMAIL_HOST, EMAIL_PORT,
+                        EMAIL_HOST_PASSWORD, tempfn, file_name, file_type)
                     # populate my model Email.task_id with the current task id
                     srl.task_id = current_task.id
                     srl.save()
                     return Response(
-                        {'taskId': current_task.id, 'from': email_from, 'to': email_to,
+                        {'taskId': current_task.id, 'from': srl.email_from, 'to': srl.email_to,
                          'status': current_task.state}, status=status.HTTP_200_OK)
 
             else:
                 # without file
                 current_task = send_email_task.delay(
-                    subject, email_from, email_to, content, EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_PASSWORD)
+                    subject, email_from, email_to, content, srl.webhook, EMAIL_HOST, EMAIL_PORT,
+                    EMAIL_HOST_PASSWORD)
                 # populate my model Email.task_id with the current task id
-                # serializer.validated_data['task_id'] = current_task.id
                 srl.task_id = current_task.id
                 srl.save()
                 return Response(
@@ -134,6 +137,9 @@ class SendEmailCheckUserOpennedAPIView(viewsets.ReadOnlyModelViewSet):
         try:
             email.user_viwed_email()
             email.save()
+            post(f'{email.url_linkEmail.webhook}/',
+                 data={'tracker_id': email.url_linkEmail.task_id,
+                       'type': 'Opened'})
         except TransitionNotAllowed as e:
             raise ValidationError(e)
         return HttpResponse(PIXEL_GIF_DATA, content_type='image/gif')
@@ -150,11 +156,14 @@ class EmailUserClickAPIView(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True)
     def user_click(self, request, id=None):
-
         email = get_object_or_404(EmailClick, id=id)
         try:
             email.user_clicked_in_the_link()
             email.save()
-        except TransitionNotAllowed:
+            post(f'{email.url_linkEmail.webhook}/',
+                 data={'tracker_id': email.url_linkEmail.task_id,
+                       'link': email.url_link,
+                       'type': 'Click'})
+        except (TransitionNotAllowed, RequestException):
             return redirect(email.url_link)
         return redirect(email.url_link)

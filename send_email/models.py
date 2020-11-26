@@ -14,6 +14,7 @@ class Email(models.Model):
     emailTo = models.EmailField(max_length=256)
     file = models.FileField(null=True, blank=True)
     user_openned_email = FSMField(default='False')
+    webhook = models.CharField(max_length=256, default='', null=True, blank=True)
 
     @transition(field=user_openned_email, source='False', target='True')
     def user_viwed_email(self):
