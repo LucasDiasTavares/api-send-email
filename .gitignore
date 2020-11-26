@@ -1,9 +1,8 @@
 *.sqlite3
-*.venv
 *pyc
 .DS_Store
 media
-.env
+.env_dev
 .idea
 /media_root
 *media_root
